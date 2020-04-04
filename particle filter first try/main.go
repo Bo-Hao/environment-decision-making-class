@@ -13,7 +13,9 @@ import (
 )
 
 var worldSize float64 = 100
-var landmarks = [][]float64{[]float64{20.0, 20.0}, []float64{80.0, 80.0}, []float64{20.0, 80.0}, []float64{80.0, 20.0}}
+
+//var landmarks = [][]float64{[]float64{20.0, 20.0}, []float64{80.0, 80.0}, []float64{20.0, 80.0}, []float64{80.0, 20.0}}
+var landmarks = [][]float64{[]float64{40.0, 30.0}}
 
 type particle struct {
 	x      float64
@@ -101,7 +103,7 @@ func (p *particle) move(turn, forward float64) {
 }
 
 func (p particle) Gaussian(mu, sigma, x float64) float64 {
-	return math.Exp(-math.Pow(mu-x, 2)/math.Pow(sigma, 2)/2.0) / math.Sqrt(2.0*math.Pi*math.Pow(sigma, 2))
+	return math.Exp(-math.Pow(mu - x, 2)/math.Pow(sigma, 2)/2.0) / math.Sqrt(2.0*math.Pi*math.Pow(sigma, 2))
 }
 
 func (p particle) measurement_prob(measurement []float64) float64 {
@@ -139,6 +141,16 @@ func takecoordinate(particle_list []particle) (result [][]float64) {
 	}
 	return
 }
+func where_center(coordinate [][]float64) (center [][]float64) {
+	T := bohao.Transpose_float(coordinate)
+	tmp := []float64{}
+	for i := 0; i < len(T); i++ {
+
+		tmp = append(tmp, bohao.Sum_float(T[i])/float64(len(coordinate)))
+	}
+	center = append(center, tmp)
+	return
+}
 
 func real_work() {
 	page := charts.NewPage()
@@ -150,15 +162,15 @@ func real_work() {
 	for i := 0; i < N; i++ {
 		robot := particle{}
 		robot.init()
-		robot.set_noise(0.05, 0.05, 5.0)
+		robot.set_noise(0.5, 0.5, 2.5)
 		particle_list = append(particle_list, robot)
 	}
 
-	for time := 0; time < 200; time++ {
+	for time := 0; time < 300; time++ {
 
 		//move all particles
 		for i := 0; i < N; i++ {
-			particle_list[i].move(0.5, 2)
+			particle_list[i].move(0.5, 0.5)
 		}
 
 		//compute the weight of each particle
@@ -192,12 +204,14 @@ func real_work() {
 
 		if time%10 == 0 {
 			coordinate := takecoordinate(particle_list)
+			center := where_center(coordinate)
 
 			scatter := charts.NewScatter()
 			scatter.SetGlobalOptions(charts.TitleOpts{Title: strconv.Itoa(time)})
 
 			scatter.AddYAxis(strconv.Itoa(time), coordinate)
 			scatter.AddYAxis("landmarks", landmarks)
+			scatter.AddYAxis("center", center)
 
 			page.Add(scatter)
 		}
