@@ -42,7 +42,6 @@ func (p *particle) sense(target float64) (Z float64) {
 }
 
 func (p *particle) move(forward float64) {
-
 	//turn, and add randomness to the turning command.
 	turn := math.Floor(rand.Float64()+0.5)*2.0 - 1.0
 
@@ -108,7 +107,7 @@ func real_work() {
 	fmt.Println("rand seed success!")
 
 	// number of particle
-	N := 1000
+	N := 100
 	times := 200
 
 	h, _ := os.Create("scatter.html")
@@ -125,7 +124,6 @@ func real_work() {
 			robot.init()
 			robot.set_noise(0.5, 2.5)
 			particle_list = append(particle_list, robot)
-
 		}
 
 		for time := 0; time < times; time++ {
@@ -137,8 +135,7 @@ func real_work() {
 			//compute the weight of each particle
 			var weight_list []float64
 			for i := 0; i < N; i++ {
-				fmt.Println(particle_list[i].sense(target))
-				weight_list = append(weight_list, particle_list[i].measurement_prob(particle_list[i].sense(target)))
+				weight_list = append(weight_list, particle_list[i].measurement_prob(target))
 			}
 
 			// normalized the weights
@@ -168,7 +165,7 @@ func real_work() {
 			particle_list = p
 
 		} // time
-		fmt.Println(2*where_center(takecoordinate(particle_list)), target)
+		fmt.Println(where_center(takecoordinate(particle_list)), target)
 		scatter.AddYAxis("particle", add_state(takecoordinate(particle_list), float64(state)))
 		scatter.AddYAxis("target", [][]float64{[]float64{float64(state), target_move(state)}})
 
@@ -179,4 +176,5 @@ func real_work() {
 
 func main() {
 	real_work()
+
 }
