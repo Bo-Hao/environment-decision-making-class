@@ -145,7 +145,7 @@ func real_work() {
 			}
 
 			//resample the particle
-			
+
 			indx := rand.Intn(1) * N //random initial a list index
 			beta := 0.0
 			max_weight := bohao.MaxSlice_float64(weight_list)
@@ -185,62 +185,65 @@ func maybe_better() {
 	h, _ := os.Create("scatter.html")
 	scatter := charts.NewScatter()
 
-	for state := 1; state < 20; state++ {
+	// initial N particles
+	var particle_list []particle
+	for i := 0; i < N; i++ {
+		robot := particle{}
+		robot.init()
+		robot.set_noise(0.5, 2.5)
+		particle_list = append(particle_list, robot)
+	}
+
+	for state := 1; state < 40; state++ {
 		// find target
 		target := target_move(state)
-
-		// initial N particles
-		var particle_list []particle
-		for i := 0; i < N; i++ {
-			robot := particle{}
-			robot.init()
-			robot.set_noise(0.5, 2.5)
-			particle_list = append(particle_list, robot)
-		}
 
 		for time := 0; time < times; time++ {
 			// move all particles
 			for i := 0; i < N; i++ {
-				particle_list[i].move(0.5)
+				particle_list[i].move(1.)
 			}
 
-			//compute the weight of each particle
-			var weight_list []float64
-			for i := 0; i < N; i++ {
-				weight_list = append(weight_list, particle_list[i].measurement_prob(target))
-			}
-
-			// normalized the weights
-			total_weight := bohao.Sum_float(weight_list)
-			for i := 0; i < len(weight_list); i++ {
-				weight_list[i] /= total_weight
-			}
-
-			//resample the particle
-			
-			indx := rand.Intn(1) * N //random initial a list index
-			beta := 0.0
-			max_weight := bohao.MaxSlice_float64(weight_list)
-			p := []particle{}
-
-			//for N times
-			for i := 0; i < N; i++ {
-				beta += rand.Float64() * 2.0 * max_weight
-				//beta variable increasing
-				//if beta is smaller than weight_list[index] then break the cor loop.
-				for beta > weight_list[indx] {
-					beta -= weight_list[indx]
-					indx = (indx + 1) % N
+			if state%4 == 1 {
+				//compute the weight of each particle
+				var weight_list []float64
+				for i := 0; i < N; i++ {
+					weight_list = append(weight_list, particle_list[i].measurement_prob(target))
 				}
-				p = append(p, particle_list[indx])
+
+				// normalized the weights
+				total_weight := bohao.Sum_float(weight_list)
+				for i := 0; i < len(weight_list); i++ {
+					weight_list[i] /= total_weight
+				}
+
+				//resample the particle
+
+				indx := rand.Intn(1) * N //random initial a list index
+				beta := 0.0
+				max_weight := bohao.MaxSlice_float64(weight_list)
+				p := []particle{}
+
+				//for N times
+				for i := 0; i < N; i++ {
+					beta += rand.Float64() * 2.0 * max_weight
+					//beta variable increasing
+					//if beta is smaller than weight_list[index] then break the cor loop.
+					for beta > weight_list[indx] {
+						beta -= weight_list[indx]
+						indx = (indx + 1) % N
+					}
+					p = append(p, particle_list[indx])
+				}
+				particle_list = p
 			}
-			particle_list = p
 
 		} // time
 		fmt.Println(where_center(takecoordinate(particle_list)), target)
 		scatter.AddYAxis("particle", add_state(takecoordinate(particle_list), float64(state)))
-		scatter.AddYAxis("target", [][]float64{{float64(state), target_move(state)}})
-
+		if state%4 == 1 {
+			scatter.AddYAxis("target", [][]float64{{float64(state), target_move(state)}})
+		}
 	} // state
 	scatter.Render(h)
 	fmt.Println("program done!")
